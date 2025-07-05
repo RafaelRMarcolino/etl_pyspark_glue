@@ -1,0 +1,34 @@
+aws s3 cp scripts/etl_clientes_parquet.py s3://SEU_BUCKET/scripts/etl_clientes_parquet.py
+
+
+criado uma nova aceese key configurar o terminal
+aws configure
+
+
+
+
+criar chave de acesso
+
+
+
+
+
+# Subir o CSV
+aws s3 cp data/clientes.csv s3://SEU_BUCKET/bronze/clientes/clientes.csv
+
+# Subir o script PySpark
+aws s3 cp scripts/bronze_clientes.py s3://SEU_BUCKET/scripts/etl_clientes_parquet.py
+
+
+
+
+1- subir o arquivo
+aws s3 cp data/clientes.csv s3://bucket-clientes-vendas-py/data/clientes.csv
+aws s3 cp data/clientes.csv s3://bucket-clientes-vendas-py/data/vendas.txt
+
+
+
+2- subir arquivo py
+aws s3 cp ingestão_bronze/bronze_clientes.py s3://bucket-clientes-vendas-py/ingestão_bronze/bronze_clientes.py
+
+
