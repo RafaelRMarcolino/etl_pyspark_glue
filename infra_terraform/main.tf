@@ -13,25 +13,33 @@ resource "aws_s3_object" "bronze_vendas_folder" {
   key    = "bronze/vendas/"
 }
 
-resource "aws_s3_object" "scripts_folder" {
-  bucket = "bucket-clientes-vendas-py"
-  key    = "scripts/ingesta_bronze/"
-}
-
 resource "aws_s3_object" "temp_folder" {
   bucket = "bucket-clientes-vendas-py"
   key    = "temp/"
+}
+
+resource "aws_s3_object" "resumo_clientes_folder" {
+  bucket = "bucket-clientes-vendas-py"
+  key    = "silver/resumo_clientes/"
+}
+
+resource "aws_s3_object" "balanco_produtos_folder" {
+  bucket = "bucket-clientes-vendas-py"
+  key    = "silver/balanco_produtos/"
 }
 
 resource "aws_glue_catalog_database" "bronze_db" {
   name = "bronze"
 }
 
-resource "aws_glue_catalog_table" "bronze_clientes" {
+resource "aws_glue_catalog_database" "silver_db" {
+  name = "silver"
+}
+
+resource "aws_glue_catalog_table" "clientes_bronze" {
   name          = "clientes_bronze"
   database_name = aws_glue_catalog_database.bronze_db.name
-
-  table_type = "EXTERNAL_TABLE"
+  table_type    = "EXTERNAL_TABLE"
 
   parameters = {
     "classification" = "parquet"
@@ -52,12 +60,10 @@ resource "aws_glue_catalog_table" "bronze_clientes" {
       name = "nome"
       type = "string"
     }
-
     columns {
       name = "idade"
       type = "int"
     }
-
     columns {
       name = "cidade"
       type = "string"
@@ -70,11 +76,10 @@ resource "aws_glue_catalog_table" "bronze_clientes" {
   }
 }
 
-resource "aws_glue_catalog_table" "bronze_vendas" {
+resource "aws_glue_catalog_table" "vendas_bronze" {
   name          = "vendas_bronze"
   database_name = aws_glue_catalog_database.bronze_db.name
-
-  table_type = "EXTERNAL_TABLE"
+  table_type    = "EXTERNAL_TABLE"
 
   parameters = {
     "classification" = "parquet"
@@ -95,25 +100,113 @@ resource "aws_glue_catalog_table" "bronze_vendas" {
       name = "venda_id"
       type = "int"
     }
+    columns {
+      name = "cliente_id"
+      type = "int"
+    }
+    columns {
+      name = "produto_id"
+      type = "int"
+    }
+    columns {
+      name = "valor"
+      type = "decimal(10,2)"
+    }
+    columns {
+      name = "data_venda"
+      type = "string"
+    }
+  }
+
+  partition_keys {
+    name = "data_carga"
+    type = "string"
+  }
+}
+
+resource "aws_glue_catalog_table" "resumo_clientes" {
+  name          = "resumo_clientes"
+  database_name = aws_glue_catalog_database.silver_db.name
+  table_type    = "EXTERNAL_TABLE"
+
+  parameters = {
+    "classification" = "parquet"
+    "EXTERNAL"       = "TRUE"
+  }
+
+  storage_descriptor {
+    location      = "s3://bucket-clientes-vendas-py/silver/resumo_clientes/"
+    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+
+    ser_de_info {
+      name                  = "parquet-serde"
+      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
+    }
 
     columns {
       name = "cliente_id"
       type = "int"
+    }
+    columns {
+      name = "nome"
+      type = "string"
+    }
+    columns {
+      name = "total_vendas"
+      type = "decimal(14,2)"
+    }
+    columns {
+      name = "quantidade_vendas"
+      type = "bigint"
+    }
+    columns {
+      name = "ticket_medio"
+      type = "decimal(14,2)"
+    }
+  }
+
+  partition_keys {
+    name = "data_carga"
+    type = "string"
+  }
+}
+
+resource "aws_glue_catalog_table" "balanco_produtos" {
+  name          = "balanco_produtos"
+  database_name = aws_glue_catalog_database.silver_db.name
+  table_type    = "EXTERNAL_TABLE"
+
+  parameters = {
+    "classification" = "parquet"
+    "EXTERNAL"       = "TRUE"
+  }
+
+  storage_descriptor {
+    location      = "s3://bucket-clientes-vendas-py/silver/balanco_produtos/"
+    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
+    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
+
+    ser_de_info {
+      name                  = "parquet-serde"
+      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
     }
 
     columns {
       name = "produto_id"
       type = "int"
     }
-
     columns {
-      name = "valor"
-      type = "decimal(10,2)"
+      name = "total_vendas_produto"
+      type = "decimal(14,2)"
     }
-
     columns {
-      name = "data_venda"
-      type = "string"
+      name = "quantidade_vendas_produto"
+      type = "bigint"
+    }
+    columns {
+      name = "ticket_medio_produto"
+      type = "decimal(14,2)"
     }
   }
 
@@ -169,112 +262,14 @@ resource "aws_glue_job" "ingesta_bronze_vendas" {
   }
 }
 
-resource "aws_athena_workgroup" "bronze_wg" {
-  name = "bronze_wg"
 
-  configuration {
-    result_configuration {
-      output_location = "s3://bucket-clientes-vendas-py/athena-results/"
-    }
-  }
-}
-resource "aws_glue_catalog_table" "resumo_clientes" {
-  name          = "resumo_clientes"
-  database_name = aws_glue_catalog_database.bronze_db.name
-
-  table_type = "EXTERNAL_TABLE"
-
-  parameters = {
-    "classification" = "parquet"
-    "EXTERNAL"       = "TRUE"
-  }
-
-  storage_descriptor {
-    location      = "s3://bucket-clientes-vendas-py/gold/resumo_clientes/"
-    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
-    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
-
-    ser_de_info {
-      name                  = "parquet-serde"
-      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
-    }
-
-    columns {
-      name = "cliente_id"
-      type = "int"
-    }
-
-    columns {
-      name = "nome"
-      type = "string"
-    }
-
-    columns {
-      name = "total_vendas"
-      type = "decimal(14,2)"
-    }
-
-    columns {
-      name = "quantidade_vendas"
-      type = "bigint"
-    }
-
-    columns {
-      name = "ticket_medio"
-      type = "decimal(14,2)"
-    }
-  }
-}
-
-resource "aws_glue_catalog_table" "balanco_produtos" {
-  name          = "balanco_produtos"
-  database_name = aws_glue_catalog_database.bronze_db.name
-
-  table_type = "EXTERNAL_TABLE"
-
-  parameters = {
-    "classification" = "parquet"
-    "EXTERNAL"       = "TRUE"
-  }
-
-  storage_descriptor {
-    location      = "s3://bucket-clientes-vendas-py/gold/balanco_produtos/"
-    input_format  = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat"
-    output_format = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat"
-
-    ser_de_info {
-      name                  = "parquet-serde"
-      serialization_library = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
-    }
-
-    columns {
-      name = "produto_id"
-      type = "int"
-    }
-
-    columns {
-      name = "total_vendas_produto"
-      type = "decimal(14,2)"
-    }
-
-    columns {
-      name = "quantidade_vendas_produto"
-      type = "bigint"
-    }
-
-    columns {
-      name = "ticket_medio_produto"
-      type = "decimal(14,2)"
-    }
-  }
-}
 resource "aws_glue_job" "pipeline_clientes_produtos" {
   name     = "pipeline_clientes_produtos"
   role_arn = "arn:aws:iam::609803702667:role/glue_service_role"
 
   command {
     name            = "glueetl"
-    script_location = "s3://bucket-clientes-vendas-py/transformation/resumo_clientes_balanco_produtos.py"
+    script_location = "s3://bucket-clientes-vendas-py/scripts/transformation/resumo_clientes_balanco_produtos.py"
     python_version  = "3"
   }
 
@@ -284,11 +279,7 @@ resource "aws_glue_job" "pipeline_clientes_produtos" {
   max_retries       = 0
 
   default_arguments = {
-    "--TempDir"                       = "s3://bucket-clientes-vendas-py/temp/"
-    "--job-language"                  = "python"
-    "--clientes_input_path"           = "s3://bucket-clientes-vendas-py/bronze/clientes/data_carga=2025-07-05/"
-    "--vendas_input_path"             = "s3://bucket-clientes-vendas-py/bronze/vendas/data_carga=2025-07-06/"
-    "--resumo_clientes_output_path"   = "s3://bucket-clientes-vendas-py/gold/resumo_clientes/"
-    "--balanco_produtos_output_path"  = "s3://bucket-clientes-vendas-py/gold/balanco_produtos/"
+    "--TempDir"      = "s3://bucket-clientes-vendas-py/temp/"
+    "--job-language" = "python"
   }
 }
