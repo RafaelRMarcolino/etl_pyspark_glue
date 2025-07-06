@@ -9,8 +9,7 @@ args = getResolvedOptions(sys.argv, ['JOB_NAME', 'input_path', 'output_path'])
 input_path = args['input_path']
 output_path = args['output_path']
 
-
-spark = SparkSession.builder.appName("IngestaoClientesCSVtoParquet").getOrCreate()
+spark = SparkSession.builder.appName("IngestaClientesCSVtoParquet").getOrCreate()
 
 # Define o schema explicitamente
 schema = StructType([
@@ -23,7 +22,7 @@ df = spark.read.csv(input_path, header=True, schema=schema)
 df = df.withColumn("data_carga", date_format(current_date(), "yyyy-MM-dd"))
 df.printSchema()
 
-
+#criando partição
 df.write.mode("overwrite").partitionBy("data_carga").parquet(output_path)
 
 spark.stop()

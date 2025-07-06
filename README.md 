@@ -1,52 +1,130 @@
-aws s3 cp scripts/etl_clientes_parquet.py s3://SEU_BUCKET/scripts/etl_clientes_parquet.py
 
+# ETL_PYSPARK_GLUE
 
-criado uma nova aceese key configurar o terminal
+Projeto de pipeline de dados utilizando **PySpark**, **AWS Glue**, **Amazon S3** e **Terraform** para ingestão e transformação de dados em um data lake na AWS.
+
+## 🚀 Tecnologias
+
+- **Python 3.x**
+- **PySpark**
+- **AWS S3**
+- **AWS Glue**
+- **Terraform**
+
+## 📂 Estrutura do Projeto
+
+```
+ETL_PYSPARK_GLUE/
+├── data/
+│   ├── clientes.csv
+│   └── vendas.txt
+├── infra_terraform/
+│   ├── main.tf
+│   ├── outputs.tf
+│   ├── provider.tf
+│   ├── variables.tf
+│   └── ...
+├── ingesta_bronze/
+│   ├── insert_bronze_clientes.py
+│   └── insert_bronze_vendas.py
+├── silver_transformation/
+│   └── resumo_clientes_balanco_produtos.py
+├── utils/
+│   └── max_partition.py
+├── requirements.txt
+└── README.md
+```
+
+## 🔑 Pré-requisitos
+
+- AWS CLI configurado com acesso à conta AWS
+- Terraform instalado
+- Python 3.x com PySpark instalado localmente (para testes, se necessário)
+- Permissões no AWS S3, Glue e Athena
+
+## ⚙️ Configuração inicial
+
+### 1️⃣ Configurar credenciais AWS
+
+```bash
 aws configure
+```
+Informe:
+- **Access Key ID**
+- **Secret Access Key**
+- **Região** (ex: `us-east-1`)
+- **Formato de saída** (opcional: `json`)
 
+### 2️⃣ Provisionar infraestrutura com Terraform
 
+Dentro do diretório `infra_terraform/`:
+```bash
+terraform init
+terraform plan
+terraform apply
+```
+Isso irá provisionar os recursos necessários (ex.: buckets, permissões).
 
+## 📤 Upload dos arquivos para o S3
 
-criar chave de acesso
-
-
-
-
-
-# Subir o CSV
-aws s3 cp data/clientes.csv s3://SEU_BUCKET/bronze/clientes/clientes.csv
-
-# Subir o script PySpark
-aws s3 cp scripts/bronze_clientes.py s3://SEU_BUCKET/scripts/etl_clientes_parquet.py
-
-
-
-
-1- subir o arquivo
+### Dados
+```bash
 aws s3 cp data/clientes.csv s3://bucket-clientes-vendas-py/data/clientes.csv
 aws s3 cp data/vendas.txt s3://bucket-clientes-vendas-py/data/vendas.txt
+```
 
-
-
-
-
-
-2- subir arquivo py
-
+### Scripts de ingestão e transformação
+```bash
 aws s3 cp ingesta_bronze/insert_bronze_clientes.py s3://bucket-clientes-vendas-py/scripts/ingesta_bronze/bronze_clientes.py
 aws s3 cp ingesta_bronze/insert_bronze_vendas.py s3://bucket-clientes-vendas-py/scripts/ingesta_bronze/bronze_vendas.py
 aws s3 cp silver_transformation/resumo_clientes_balanco_produtos.py s3://bucket-clientes-vendas-py/scripts/transformation/resumo_clientes_balanco_produtos.py
+```
 
-s3://bucket-clientes-vendas-py/scripts/ingestão_bronze/bronze_clientes.py
-s3://bucket-clientes-vendas-py/scripts/ingestão_bronze/bronze_vendas.py
-s3://bucket-clientes-vendas-py/scripts/transformation/resumo_clientes_balanco_produtos.py
+## 🛠️ Execução dos Glue Jobs
 
+1️⃣ **Acesse o AWS Glue → ETL Jobs**
 
+2️⃣ **Execute os jobs na seguinte ordem:**
 
+- `ingesta_bronze_clientes`  
+  > Ingesta do CSV de clientes → cria a tabela `bronze.clientes_bronze`
 
-MSCK REPAIR TABLE bronze.vendas_bronze;
+- `ingesta_bronze_vendas`  
+  > Ingesta do TXT de vendas → cria a tabela `bronze.vendas_bronze`
+
+- `pipeline_clientes_produtos`  
+  > Realiza transformação e gera:  
+  - `silver.resumo_clientes`
+  - `silver.balanco_produtos`
+
+💡 **Logs:** Os logs de execução dos jobs podem ser consultados no **CloudWatch Logs**.
+
+## 🏗️ Atualizar metadados no Glue Catalog (Athena)
+
+Após execução dos jobs, rode no Athena:
+```sql
 MSCK REPAIR TABLE bronze.clientes_bronze;
+MSCK REPAIR TABLE bronze.vendas_bronze;
 MSCK REPAIR TABLE silver.resumo_clientes;
 MSCK REPAIR TABLE silver.balanco_produtos;
+```
+✅ Isso garante que partições criadas sejam reconhecidas.
+
+## 📦 Dependências
+
+Exemplo de `requirements.txt` (para uso local ou Glue Python Shell):
+```
+boto3
+pyspark
+```
+
+## ✅ Execução do pipeline
+
+- Os scripts são executados via AWS Glue apontando para os arquivos no S3.
 
 
+## 📌 Observações
+
+- Substitua `bucket-clientes-vendas-py` pelo nome real do seu bucket.
+- Adapte os nomes das tabelas no Glue/Athena conforme o Data Catalog criado.
+- Certifique-se de que as permissões no S3 e Glue estão corretamente configuradas.
