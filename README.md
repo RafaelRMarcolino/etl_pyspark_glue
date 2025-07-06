@@ -44,36 +44,39 @@ ETL_PYSPARK_GLUE/
 
 ## ⚙️ Configuração inicial
 
-### 1️⃣ Configurar credenciais AWS
+### Configurar credenciais AWS
 
 ```bash
 aws configure
 ```
+
 Informe:
-- **Access Key ID**
-- **Secret Access Key**
-- **Região** (ex: `us-east-1`)
-- **Formato de saída** (opcional: `json`)
+- Access Key ID
+- Secret Access Key
+- Região (ex: `us-east-1`)
+- Formato de saída (opcional: `json`)
 
-### 2️⃣ Provisionar infraestrutura com Terraform
+### Provisionar infraestrutura com Terraform
 
-Dentro do diretório `infra_terraform/`:
+No diretório `infra_terraform/`:
+
 ```bash
 terraform init
 terraform plan
 terraform apply
 ```
-Isso irá provisionar os recursos necessários (ex.: buckets, permissões).
 
 ## 📤 Upload dos arquivos para o S3
 
 ### Dados
+
 ```bash
 aws s3 cp data/clientes.csv s3://bucket-clientes-vendas-py/data/clientes.csv
 aws s3 cp data/vendas.txt s3://bucket-clientes-vendas-py/data/vendas.txt
 ```
 
-### Scripts de ingestão e transformação
+### Scripts
+
 ```bash
 aws s3 cp ingesta_bronze/insert_bronze_clientes.py s3://bucket-clientes-vendas-py/scripts/ingesta_bronze/bronze_clientes.py
 aws s3 cp ingesta_bronze/insert_bronze_vendas.py s3://bucket-clientes-vendas-py/scripts/ingesta_bronze/bronze_vendas.py
@@ -82,49 +85,33 @@ aws s3 cp silver_transformation/resumo_clientes_balanco_produtos.py s3://bucket-
 
 ## 🛠️ Execução dos Glue Jobs
 
-1️⃣ **Acesse o AWS Glue → ETL Jobs**
+1. Acesse o AWS Glue → ETL Jobs
+2. Execute os jobs:
+   - `ingesta_bronze_clientes`: cria a tabela `bronze.clientes_bronze`
+   - `ingesta_bronze_vendas`: cria a tabela `bronze.vendas_bronze`
+   - `pipeline_clientes_produtos`: gera `silver.resumo_clientes` e `silver.balanco_produtos`
 
-2️⃣ **Execute os jobs na seguinte ordem:**
+Logs disponíveis no **CloudWatch Logs**.
 
-- `ingesta_bronze_clientes`  
-  > Ingesta do CSV de clientes → cria a tabela `bronze.clientes_bronze`
+## 🏗️ Atualizar metadados no Glue Catalog
 
-- `ingesta_bronze_vendas`  
-  > Ingesta do TXT de vendas → cria a tabela `bronze.vendas_bronze`
-
-- `pipeline_clientes_produtos`  
-  > Realiza transformação e gera:  
-  - `silver.resumo_clientes`
-  - `silver.balanco_produtos`
-
-💡 **Logs:** Os logs de execução dos jobs podem ser consultados no **CloudWatch Logs**.
-
-## 🏗️ Atualizar metadados no Glue Catalog (Athena)
-
-Após execução dos jobs, rode no Athena:
 ```sql
 MSCK REPAIR TABLE bronze.clientes_bronze;
 MSCK REPAIR TABLE bronze.vendas_bronze;
 MSCK REPAIR TABLE silver.resumo_clientes;
 MSCK REPAIR TABLE silver.balanco_produtos;
 ```
-✅ Isso garante que partições criadas sejam reconhecidas.
 
 ## 📦 Dependências
 
-Exemplo de `requirements.txt` (para uso local ou Glue Python Shell):
+Exemplo do `requirements.txt`:
+
 ```
 boto3
 pyspark
 ```
 
-## ✅ Execução do pipeline
-
-- Os scripts são executados via AWS Glue apontando para os arquivos no S3.
-
-
 ## 📌 Observações
 
-- Substitua `bucket-clientes-vendas-py` pelo nome real do seu bucket.
-- Adapte os nomes das tabelas no Glue/Athena conforme o Data Catalog criado.
-- Certifique-se de que as permissões no S3 e Glue estão corretamente configuradas.
+- Substitua `bucket-clientes-vendas-py` pelo seu bucket real.
+- Adapte os nomes no Glue/Athena conforme o Data Catalog.
