@@ -41,8 +41,12 @@ s3://bucket-clientes-vendas-py/scripts/ingestão_bronze/bronze_clientes.py
 s3://bucket-clientes-vendas-py/scripts/ingestão_bronze/bronze_vendas.py
 s3://bucket-clientes-vendas-py/scripts/transformation/resumo_clientes_balanco_produtos.py
 
+
+
+
 MSCK REPAIR TABLE bronze.vendas_bronze;
 MSCK REPAIR TABLE bronze.clientes_bronze;
+MSCK REPAIR TABLE silver.resumo_clientes;
+MSCK REPAIR TABLE silver.balanco_produtos;
 
-MSCK REPAIR TABLE gold.resumo_clientes;
-MSCK REPAIR TABLE gold.balanco_produtos;
+

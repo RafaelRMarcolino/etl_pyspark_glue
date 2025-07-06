@@ -273,13 +273,15 @@ resource "aws_glue_job" "pipeline_clientes_produtos" {
     python_version  = "3"
   }
 
-  glue_version      = "3.0"
-  worker_type       = "G.1X"
-  number_of_workers = 2
-  max_retries       = 0
-
   default_arguments = {
-    "--TempDir"      = "s3://bucket-clientes-vendas-py/temp/"
-    "--job-language" = "python"
+    "--TempDir"                     = "s3://bucket-clientes-vendas-py/temp/"
+    "--job-language"                 = "python"
+    "--resumo_clientes_output_path"  = "s3://bucket-clientes-vendas-py/silver/resumo_clientes/"
+    "--balanco_produtos_output_path" = "s3://bucket-clientes-vendas-py/silver/balanco_produtos/"
   }
+
+  max_retries = 0
+  glue_version = "3.0"
+  number_of_workers = 2
+  worker_type = "G.1X"
 }
