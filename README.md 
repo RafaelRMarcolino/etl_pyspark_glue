@@ -31,6 +31,7 @@ aws s3 cp data/vendas.txt s3://bucket-clientes-vendas-py/data/vendas.txt
 2- subir arquivo py
 aws s3 cp ingestão_bronze/bronze_clientes.py s3://bucket-clientes-vendas-py/ingestão_bronze/bronze_clientes.py
 aws s3 cp ingesta_bronze/insert_bronze_vendas.py s3://bucket-clientes-vendas-py/ingestão_bronze/insert_bronze_vendas.py
+aws s3 cp transformation/resumo_clientes_balanco_produtos.py s3://bucket-clientes-vendas-py/transformation/resumo_clientes_balanco_produtos.py
 
 
 MSCK REPAIR TABLE bronze.vendas_bronze;

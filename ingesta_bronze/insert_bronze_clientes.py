@@ -9,7 +9,7 @@ args = getResolvedOptions(sys.argv, ['JOB_NAME', 'input_path', 'output_path'])
 input_path = args['input_path']
 output_path = args['output_path']
 
-# Inicializa a SparkSession
+
 spark = SparkSession.builder.appName("IngestaoClientesCSVtoParquet").getOrCreate()
 
 # Define o schema explicitamente
