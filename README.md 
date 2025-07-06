@@ -24,11 +24,15 @@ aws s3 cp scripts/bronze_clientes.py s3://SEU_BUCKET/scripts/etl_clientes_parque
 
 1- subir o arquivo
 aws s3 cp data/clientes.csv s3://bucket-clientes-vendas-py/data/clientes.csv
-aws s3 cp data/clientes.csv s3://bucket-clientes-vendas-py/data/vendas.txt
+aws s3 cp data/vendas.txt s3://bucket-clientes-vendas-py/data/vendas.txt
 
 
 
 2- subir arquivo py
 aws s3 cp ingestão_bronze/bronze_clientes.py s3://bucket-clientes-vendas-py/ingestão_bronze/bronze_clientes.py
+aws s3 cp ingesta_bronze/insert_bronze_vendas.py s3://bucket-clientes-vendas-py/ingestão_bronze/insert_bronze_vendas.py
 
+
+MSCK REPAIR TABLE bronze.vendas_bronze;
+MSCK REPAIR TABLE bronze.clientes_bronze;
 
